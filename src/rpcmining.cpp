@@ -765,26 +765,27 @@ Value getblocktemplate(const Array& params, bool fHelp)
 	double total=0;
 	int bidders_count=0;
 
-    {
-	ifstream myfile ((GetDataDir()/ "bidtracker/final.dat").string().c_str());
-	
-	std::string line;
-	if (myfile.is_open()){
-		int i=1;
-		while ( myfile.good() ){
-			getline (myfile,line);
+    if (chainActive.Tip()->nHeight>199999 && chainActive.Tip()->nHeight%900==0){
 
-            std::vector<std::string> strs;
-            boost::split(strs, line, boost::is_any_of(","));
-			double m = atof(strs[1].c_str());                       
-            if (line.empty()) continue;       
-            CBitcreditAddress address(convertAddress2(strs[0].c_str(),0x0c));
-			aBids.push_back(Pair(address.ToString().c_str(), strs[1].c_str()));
-			total = total+m;
-			i++;
-	}	
-	bidders_count=i;
-	}
+		ifstream myfile ((GetDataDir()/ "bidtracker/final.dat").string().c_str());
+	
+		std::string line;
+		if (myfile.is_open()){
+			int i=1;
+			while ( myfile.good() ){
+				getline (myfile,line);
+
+				std::vector<std::string> strs;
+				boost::split(strs, line, boost::is_any_of(","));
+				double m = atof(strs[1].c_str());                       
+				if (line.empty()) continue;       
+				CBitcreditAddress address(convertAddress2(strs[0].c_str(),0x0c));
+				aBids.push_back(Pair(address.ToString().c_str(), strs[1].c_str()));
+				total = total+m;
+				i++;
+			}	
+		bidders_count=i;
+		}
 	}		
 
     Object result;
@@ -829,10 +830,12 @@ Value getblocktemplate(const Array& params, bool fHelp)
    
     result.push_back(Pair("banknode_payments", BanknodePayments));
     result.push_back(Pair("enforce_banknode_payments", true));
-    result.push_back(Pair("bidders_count", bidders_count));
-    result.push_back(Pair("bids_value", total));    
-	result.push_back(Pair("bidders", aBids));
 
+    if (chainActive.Tip()->nHeight>199999 && chainActive.Tip()->nHeight%900==0){
+		result.push_back(Pair("bidders_count", bidders_count));
+		result.push_back(Pair("bids_value", total));    
+		result.push_back(Pair("bidders", aBids));
+	}
     return result;
 }
 

@@ -4,6 +4,8 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include "checkpoints.h"
 #include "base58.h"
+#include "amount.h"
+#include "bidtracker.h"
 #include "clientversion.h"
 #include "init.h"
 #include "main.h"
@@ -20,7 +22,14 @@
 #endif
 
 #include <stdint.h>
-
+#include <stdint.h>
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <boost/assign/list_of.hpp>
 #include "json/json_spirit_utils.h"
 #include "json/json_spirit_value.h"
@@ -186,9 +195,49 @@ Value getinternalstats(const Array& params, bool fHelp)
     return obj;
 }
 
+Value getbids(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getbids\n"
+            "Returns an object containing information about existing real-time bids\n"         
+            "This should be used for debugging/confirmation purposes only; this is a resource intensive\n"
+            "operation and may slow down wallet operation, especially on slow internet connections.\n"
+            "Warning, Result is an object with Pubkey hashes depicting originating address\n"
+            "for the corresponding receiving addresses, use \"getblocktemplate\".\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getbids", "")
+            + HelpExampleRpc("getbids", "")
+        );
+	Bidtracker r;
+	string m= r.getbids(chainActive.Tip()->nHeight);
+	Object oBids;
+	ifstream myfile ((GetDataDir()/ "bidtracker/final.dat").string().c_str());
+	
+	std::string line;
+	if (myfile.is_open()){
+		int i=1;
+		while ( myfile.good() ){
+			getline (myfile,line);
+
+            std::vector<std::string> strs;
+            boost::split(strs, line, boost::is_any_of(","));
+			                       
+            if (line.empty()) continue;       
+            //CBitcreditAddress address(convertAddress2(strs[0].c_str(),0x0c));
+			oBids.push_back(Pair(strs[0].c_str(), strs[1].c_str()));
+			
+			i++;
+	}	
+	}
+
+    return oBids;
+}
+
 /*
     Used for updating/reading spork settings on the network
 */
+
 Value spork(const Array& params, bool fHelp)
 {
     if(params.size() == 1 && params[0].get_str() == "show"){

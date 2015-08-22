@@ -99,6 +99,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "createtransferescrow", 3 },
     { "createtransferescrow", 4 },
 
+    { "getinternalstats", 0 },
+    { "getbids", 0 },
 
 };
 
